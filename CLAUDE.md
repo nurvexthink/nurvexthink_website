@@ -17,8 +17,8 @@ Individual software products are **separate repos/deployments**, not part of thi
 ## Stack (locked)
 
 - **Language:** TypeScript
-- **Framework:** Next.js 15 (App Router) + React
-- **Styling:** Tailwind CSS + shadcn/ui
+- **Framework:** Next.js 16 (App Router) + React 19 — `create-next-app` now installs 16; note `next lint` is removed, so lint runs plain `eslint` (`npm run lint`).
+- **Styling:** Tailwind CSS v4 (CSS-first `@theme`) + shadcn/ui (base registry; `globals.css` does `@import "shadcn/tailwind.css"`, so the `shadcn` package must stay a dependency).
 - **3D:** React Three Fiber + drei + Three.js (Spline optional for no-code scenes)
 - **Animation:** Framer Motion (+ GSAP for advanced work)
 - **Backend:** Supabase — Postgres, Auth, Storage, Edge Functions (this IS the backend; no Render server)
@@ -27,13 +27,20 @@ Individual software products are **separate repos/deployments**, not part of thi
 
 ## Theme (from the logo)
 
+Brand tokens are defined in `src/app/globals.css` with a **`brand-` prefix** so they never
+collide with shadcn's `--color-*` tokens. Use utilities like `bg-brand-bg`, `text-brand-silver-2`,
+`text-brand-muted`, `from-brand-silver`.
+
 | Token | Value |
 |---|---|
-| `--bg` | `#0A0A0B` (near-black) |
-| `--primary-1 → 2` | `#1E2A44 → #2D3A5C` (navy/slate) |
-| `--accent-1 → 2` | `#C0C5CE → #E8EBF0` (metallic silver) |
+| `--color-brand-bg` | `#0A0A0B` (near-black) |
+| `--color-brand-surface` | `#121319` |
+| `--color-brand-navy → navy-2` | `#1E2A44 → #2D3A5C` (navy/slate) |
+| `--color-brand-silver → silver-2` | `#C0C5CE → #E8EBF0` (metallic silver) |
+| `--color-brand-muted` | `#8A93A6` |
 
-Fonts: Space Grotesk / Sora (headings), Inter (body). Dark-mode-first, glassmorphism, metallic gradients.
+Fonts: Space Grotesk (headings, `--font-heading`), Inter (body, `--font-sans`). Dark mode is on
+by default (`dark` class on `<html>`), glassmorphism, metallic gradients.
 
 ## Data model (Supabase)
 
