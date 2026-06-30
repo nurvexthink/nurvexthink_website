@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -17,13 +18,24 @@ const heading = Space_Grotesk({
   display: "swap",
 });
 
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://nurvexthink.com"),
-  title: { default: "NurvexThink", template: "%s — NurvexThink" },
-  description: "Software, built and published. Custom software on demand.",
+  title: {
+    default: "NurvexThink — Software, built and published",
+    template: "%s — NurvexThink",
+  },
+  description:
+    "NurvexThink is a software studio that designs, builds, and ships products — and takes custom software on demand.",
   openGraph: {
-    title: "NurvexThink",
-    description: "Software, built and published. Custom software on demand.",
+    title: "NurvexThink — Software, built and published",
+    description:
+      "A software studio that designs, builds, and ships products — and takes custom software on demand.",
     siteName: "NurvexThink",
     type: "website",
   },
@@ -34,12 +46,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={cn("dark h-full font-sans antialiased", sans.variable, heading.variable)}
+      suppressHydrationWarning
+      className={cn("h-full", sans.variable, heading.variable, mono.variable)}
     >
-      <body className="flex min-h-full flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="flex min-h-full flex-col antialiased">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

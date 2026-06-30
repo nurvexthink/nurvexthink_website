@@ -7,10 +7,11 @@ describe("Navbar", () => {
     render(<Navbar />);
     expect(screen.getByText("NurvexThink")).toBeInTheDocument();
   });
-  it("renders all primary nav links", () => {
+
+  it("renders every primary nav link (at least once across desktop/mobile)", () => {
     render(<Navbar />);
     for (const label of ["Products", "Blog", "Custom Order", "About", "Contact"]) {
-      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
+      expect(screen.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     }
   });
 });

@@ -1,25 +1,194 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Container } from "@/components/ui/container";
+import { Eyebrow, SectionHeading } from "@/components/section-heading";
+import { ServiceIcon } from "@/components/icon";
+import { ProductCard } from "@/components/product-card";
+import { BlogCard } from "@/components/blog-card";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { blogPosts, processSteps, products, services, siteConfig, stats } from "@/lib/content";
 
 export default function HomePage() {
   return (
-    <section className="mx-auto flex max-w-6xl flex-col items-center px-6 py-28 text-center">
-      <h1 className="from-brand-silver to-brand-silver-2 bg-linear-to-r bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-7xl">
-        NurvexThink
-      </h1>
-      <p className="text-brand-muted mt-6 max-w-2xl text-lg">
-        Software, built and published. Explore our products, read the blog, or request custom
-        software on demand.
-      </p>
-      <div className="mt-10 flex gap-4">
-        <Link href="/products" className={buttonVariants({ size: "lg" })}>
-          Explore products
-        </Link>
-        <Link href="/order" className={buttonVariants({ variant: "outline", size: "lg" })}>
-          Request custom software
-        </Link>
-      </div>
-      {/* 3D metallic "NT" hero is added in the 3D milestone plan */}
-    </section>
+    <>
+      {/* ---------------- Hero ---------------- */}
+      <section className="relative overflow-hidden">
+        <div aria-hidden className="bg-grid mask-fade-y absolute inset-0" />
+        <div aria-hidden className="bg-glow absolute inset-x-0 top-0 h-150" />
+        <Container className="relative py-24 text-center sm:py-32">
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-6">
+            <Eyebrow>Software studio · est. {siteConfig.founded}</Eyebrow>
+            <h1 className="text-gradient font-heading text-5xl font-bold tracking-tight text-balance sm:text-7xl">
+              Software, built and published.
+            </h1>
+            <p className="text-muted-foreground max-w-2xl text-lg text-pretty">
+              {siteConfig.name}
+              {
+                " designs, builds, and ships its own products — and takes custom software on demand. "
+              }
+              Explore what we&apos;ve made, or bring us what you need built.
+            </p>
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+              <Link href="/products" className={cn(buttonVariants({ size: "lg" }), "group")}>
+                Explore products
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link href="/order" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                Start a project
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- Stats ---------------- */}
+      <section className="border-border bg-card/40 border-y">
+        <Container className="grid grid-cols-2 gap-px overflow-hidden md:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="flex flex-col gap-1 px-2 py-8 text-center">
+              <span className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
+                {s.value}
+              </span>
+              <span className="text-muted-foreground text-sm">{s.label}</span>
+            </div>
+          ))}
+        </Container>
+      </section>
+
+      {/* ---------------- Services ---------------- */}
+      <section className="py-20 sm:py-28">
+        <Container className="flex flex-col gap-12">
+          <SectionHeading
+            eyebrow="What we do"
+            title="From idea to shipped software"
+            description="One studio for the whole journey — strategy, design, engineering, and the launch that comes after."
+          />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {services.map((service) => (
+              <div
+                key={service.title}
+                className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6"
+              >
+                <span className="bg-primary/10 text-primary inline-flex size-11 items-center justify-center rounded-xl">
+                  <ServiceIcon name={service.icon} className="size-5" />
+                </span>
+                <h3 className="font-heading text-lg font-semibold tracking-tight">
+                  {service.title}
+                </h3>
+                <p className="text-muted-foreground text-sm">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- Featured products ---------------- */}
+      <section className="border-border border-t py-20 sm:py-28">
+        <Container className="flex flex-col gap-12">
+          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+            <SectionHeading
+              align="left"
+              eyebrow="Catalog"
+              title="Products we've shipped"
+              description="Software we build, run, and keep improving. Click any product to learn more."
+              className="max-w-xl"
+            />
+            <Link
+              href="/products"
+              className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
+            >
+              View all products
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {products.slice(0, 6).map((product) => (
+              <ProductCard key={product.slug} product={product} />
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- Process ---------------- */}
+      <section className="border-border border-t py-20 sm:py-28">
+        <Container className="flex flex-col gap-12">
+          <SectionHeading
+            eyebrow="How we work"
+            title="Three steps, no black box"
+            description="You see the work as it happens. A plan you can read, software you can click, and support after launch."
+          />
+          <div className="grid gap-4 md:grid-cols-3">
+            {processSteps.map((step) => (
+              <div
+                key={step.step}
+                className="border-border bg-card relative flex flex-col gap-3 rounded-2xl border p-7"
+              >
+                <span className="text-primary font-mono text-sm font-medium">{step.step}</span>
+                <h3 className="font-heading text-xl font-semibold tracking-tight">{step.title}</h3>
+                <p className="text-muted-foreground text-sm">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- Blog preview ---------------- */}
+      <section className="border-border border-t py-20 sm:py-28">
+        <Container className="flex flex-col gap-12">
+          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+            <SectionHeading
+              align="left"
+              eyebrow="Writing"
+              title="From the studio"
+              description="Notes on how we build, design, and ship."
+              className="max-w-xl"
+            />
+            <Link
+              href="/blog"
+              className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
+            >
+              Read the blog
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {blogPosts.slice(0, 3).map((post) => (
+              <BlogCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------------- CTA ---------------- */}
+      <section className="py-20 sm:py-28">
+        <Container>
+          <div className="border-border bg-card relative overflow-hidden rounded-3xl border px-6 py-16 text-center sm:px-12">
+            <div aria-hidden className="bg-glow absolute inset-x-0 top-0 h-64" />
+            <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6">
+              <h2 className="font-heading text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+                Have something to build?
+              </h2>
+              <p className="text-muted-foreground sm:text-lg">
+                Tell us the problem. We&apos;ll come back with a plan, a timeline, and a preview
+                link you can watch take shape.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href="/order" className={cn(buttonVariants({ size: "lg" }), "group")}>
+                  Start a project
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/contact"
+                  className={buttonVariants({ variant: "outline", size: "lg" })}
+                >
+                  Talk to us
+                </Link>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+    </>
   );
 }
