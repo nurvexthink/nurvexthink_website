@@ -21,9 +21,23 @@ begin
 end;
 $$;
 
+-- ============================================================
+-- profiles  (one row per admin user; this app has no public signups)
+-- ============================================================
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text,
+  full_name text,
+  role text not null default 'admin' check (role in ('owner', 'admin')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
 -- Admin check used by RLS. SECURITY DEFINER (bypasses RLS to avoid recursion on
 -- profiles) and kept in a private, non-exposed schema. Only ever reads the
 -- caller's own row, so it leaks nothing. Executable by authenticated only.
+-- Defined AFTER public.profiles exists so the SQL function body validates.
 create schema if not exists private;
 
 create or replace function private.is_admin()
@@ -43,19 +57,6 @@ $$;
 
 revoke all on function private.is_admin() from public, anon;
 grant execute on function private.is_admin() to authenticated;
-
--- ============================================================
--- profiles  (one row per admin user; this app has no public signups)
--- ============================================================
-create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  email text,
-  full_name text,
-  role text not null default 'admin' check (role in ('owner', 'admin')),
-  created_at timestamptz not null default now()
-);
-
-alter table public.profiles enable row level security;
 
 -- Create a profile automatically for every new auth user.
 create or replace function public.handle_new_user()
