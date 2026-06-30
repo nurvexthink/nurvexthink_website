@@ -18,8 +18,16 @@ const heading = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nurvexthink.com"),
   title: { default: "NurvexThink", template: "%s — NurvexThink" },
   description: "Software, built and published. Custom software on demand.",
+  openGraph: {
+    title: "NurvexThink",
+    description: "Software, built and published. Custom software on demand.",
+    siteName: "NurvexThink",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "NurvexThink" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
