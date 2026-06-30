@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
+/* NurvexThink brand tokens (from the logo: navy/slate N + metallic silver T on black) */
+@theme {
+  --color-bg: #0a0a0b;
+  --color-surface: #121319;
+  --color-primary: #1e2a44;
+  --color-primary-2: #2d3a5c;
+  --color-accent: #c0c5ce;
+  --color-accent-2: #e8ebf0;
+  --color-muted: #8a93a6;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-accent-2);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 }
