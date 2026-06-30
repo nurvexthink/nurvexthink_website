@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const sans = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 const heading = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-heading",
-  display: "swap",
-});
-
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
   display: "swap",
 });
 
@@ -21,8 +22,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${heading.variable} ${body.variable} h-full antialiased`}>
-      <body className="bg-bg text-accent-2 flex min-h-full flex-col">{children}</body>
+    <html
+      lang="en"
+      className={cn("dark h-full font-sans antialiased", sans.variable, heading.variable)}
+    >
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
