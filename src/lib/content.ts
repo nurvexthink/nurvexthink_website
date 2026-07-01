@@ -21,10 +21,10 @@ export const siteConfig = {
 
 export type Stat = { value: string; label: string };
 export const stats: Stat[] = [
-  { value: "100%", label: "Built & owned in-house" },
-  { value: "< 1 wk", label: "From kickoff to a preview link" },
-  { value: "24/7", label: "Uptime monitoring on what we ship" },
-  { value: "2026", label: "Studio founded" },
+  { value: "100%", label: "Built in-house" },
+  { value: "< 1 wk", label: "To first preview" },
+  { value: "24/7", label: "Monitored" },
+  { value: "2026", label: "Founded" },
 ];
 
 export type Service = {
@@ -36,38 +36,32 @@ export const services: Service[] = [
   {
     icon: "Rocket",
     title: "Published products",
-    description:
-      "We build and launch our own software, then put it in your hands — explore the catalog and use it today.",
+    description: "Our own software, built and launched.",
   },
   {
     icon: "Workflow",
-    title: "Custom software on demand",
-    description:
-      "Tell us the problem. We scope it, design it, and deliver the system that solves it — end to end.",
+    title: "Custom software",
+    description: "You bring the problem. We ship the system.",
   },
   {
     icon: "Code2",
     title: "Product engineering",
-    description:
-      "Web and mobile apps built to ship, from first commit to production, with a preview link from day one.",
+    description: "Web and mobile apps, built to ship.",
   },
   {
     icon: "Sparkles",
     title: "Design & interface",
-    description:
-      "Interfaces that feel considered: clear, fast, accessible, and unmistakably on-brand.",
+    description: "Interfaces that feel fast and considered.",
   },
   {
     icon: "Database",
     title: "Cloud & data",
-    description:
-      "Databases, deploys, and pipelines that stay up under load and scale back down to near-zero cost.",
+    description: "Databases and deploys that scale to zero.",
   },
   {
     icon: "Cpu",
     title: "AI features",
-    description:
-      "Practical AI woven into products — search, assistants, and automation that earn their place.",
+    description: "Practical AI: search, assistants, automation.",
   },
 ];
 
@@ -89,20 +83,17 @@ export const processSteps: ProcessStep[] = [
   {
     step: "01",
     title: "Scope",
-    description:
-      "We map the problem, agree on what success looks like, and hand you a plan you can actually see — not a black box.",
+    description: "We map the problem and agree on the plan.",
   },
   {
     step: "02",
     title: "Build",
-    description:
-      "Short cycles with working software every week and a preview link from day one, so there are no surprises at the end.",
+    description: "Working software every week, live from day one.",
   },
   {
     step: "03",
     title: "Ship & support",
-    description:
-      "We launch, watch the metrics, and keep improving what we shipped — monitoring and fixes included.",
+    description: "We launch, monitor, and keep improving.",
   },
 ];
 

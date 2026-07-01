@@ -5,6 +5,7 @@ import { Eyebrow, SectionHeading } from "@/components/section-heading";
 import { ServiceIcon } from "@/components/icon";
 import { ProductCard } from "@/components/product-card";
 import { BlogCard } from "@/components/blog-card";
+import { HeroCanvas } from "@/components/hero-canvas";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processSteps, services, siteConfig, stats } from "@/lib/content";
@@ -22,19 +23,18 @@ export default async function HomePage() {
       {/* ---------------- Hero ---------------- */}
       <section className="relative overflow-hidden">
         <div aria-hidden className="bg-grid mask-fade-y absolute inset-0" />
-        <div aria-hidden className="bg-glow absolute inset-x-0 top-0 h-150" />
-        <Container className="relative py-24 text-center sm:py-32">
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-6">
-            <Eyebrow>Software studio · est. {siteConfig.founded}</Eyebrow>
+        <div aria-hidden className="bg-glow absolute inset-x-0 top-0 h-180" />
+        <Container className="relative flex min-h-[88vh] flex-col items-center justify-center gap-8 py-16 text-center">
+          <div className="relative h-64 w-full max-w-md sm:h-80">
+            <HeroCanvas />
+          </div>
+          <div className="flex flex-col items-center gap-5">
+            <Eyebrow>Software studio</Eyebrow>
             <h1 className="text-gradient font-heading text-5xl font-bold tracking-tight text-balance sm:text-7xl">
               Software, built and published.
             </h1>
-            <p className="text-muted-foreground max-w-2xl text-lg text-pretty">
-              {siteConfig.name}
-              {
-                " designs, builds, and ships its own products — and takes custom software on demand. "
-              }
-              Explore what we&apos;ve made, or bring us what you need built.
+            <p className="text-muted-foreground max-w-md text-lg text-pretty">
+              Products we build and run — and custom software on demand.
             </p>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <Link href="/products" className={cn(buttonVariants({ size: "lg" }), "group")}>
@@ -68,8 +68,8 @@ export default async function HomePage() {
         <Container className="flex flex-col gap-12">
           <SectionHeading
             eyebrow="What we do"
-            title="From idea to shipped software"
-            description="One studio for the whole journey — strategy, design, engineering, and the launch that comes after."
+            title="From idea to shipped"
+            description="Strategy, design, engineering, launch."
           />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
@@ -99,7 +99,7 @@ export default async function HomePage() {
                 align="left"
                 eyebrow="Catalog"
                 title="Products we've shipped"
-                description="Software we build, run, and keep improving. Click any product to learn more."
+                description="Software we build and run."
                 className="max-w-xl"
               />
               <Link
@@ -125,7 +125,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="How we work"
             title="Three steps, no black box"
-            description="You see the work as it happens. A plan you can read, software you can click, and support after launch."
+            description="See the work as it happens."
           />
           <div className="grid gap-4 md:grid-cols-3">
             {processSteps.map((step) => (
