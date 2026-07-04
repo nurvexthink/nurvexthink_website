@@ -16,8 +16,6 @@ export type ProductRow = {
   cover_image: string | null;
   gallery: string[];
   category_id: string | null;
-  /** Denormalized on select via `product_categories(name)` join; not a column. */
-  category_name?: string | null;
   tech: string[];
   lifecycle: "live" | "beta" | "soon";
   year: string | null;
@@ -105,10 +103,8 @@ export type Database = {
       };
       products: {
         Row: ProductRow;
-        Insert: { slug: string; name: string } & Partial<
-          Omit<ProductRow, "slug" | "name" | "category_name">
-        >;
-        Update: Partial<Omit<ProductRow, "category_name">>;
+        Insert: { slug: string; name: string } & Partial<Omit<ProductRow, "slug" | "name">>;
+        Update: Partial<ProductRow>;
         Relationships: [];
       };
       product_categories: {

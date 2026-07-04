@@ -1,50 +1,190 @@
-# Products Schema (PR 1 of 3) Implementation Plan
+\documentclass[11pt,a4paper]{article}
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+% ---------- packages ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 
-**Goal:** Migration 0003 transforms the live products schema (categories table, lifecycle/status split, tech rename, feature/junction tables, security fixes) while every existing page — public grid, detail, and the basic admin CRUD — keeps working unchanged.
+% ---------- brand colours ----------
+\definecolor{ink}{HTML}{0A0A0B}
+\definecolor{navy}{HTML}{1E2A44}
+\definecolor{slate}{HTML}{2D3A5C}
+\definecolor{silver}{HTML}{8A93A6}
+\definecolor{indigo}{HTML}{5C7CFA}
+\definecolor{lightgray}{HTML}{F2F3F5}
+\definecolor{codebg}{HTML}{F5F6F8}
 
-**Architecture:** One idempotent SQL migration (matching the 0001/0002 style: `IF NOT EXISTS` + `DO $$` guards for renames) plus a single TypeScript compile-unit update: row types → public queries → admin surfaces. The UI view-model `Product` keeps its exact shape (`status: "Live"|"Beta"|"Soon"`, `tags`) so **no public component changes**; only the mapping layer changes underneath.
+\graphicspath{{../../../brand/}}
 
-**Tech Stack:** Postgres (Supabase), TypeScript, Next.js 16 Server Actions, Vitest.
+% ---------- hyperref ----------
+\hypersetup{
+  pdftitle={NurvexThink -- Products Schema (PR 1 of 3) -- Implementation Plan},
+  pdfauthor={NurvexThink},
+  colorlinks=true, linkcolor=navy, urlcolor=slate, citecolor=navy
+}
 
-## Global Constraints
+% ---------- headings ----------
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{slate}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
 
-- Brand spelling: **NurvexThink** / `nurvexthink` (never other spellings).
-- RLS default-deny on every table; index every column an RLS policy references (CLAUDE.md).
-- `service_role` key server-side only; never in client code or the repo.
-- Conventional Commits; branch `feat/products` (already checked out; spec commits live on it).
-- **No new npm dependencies in this PR.**
-- The live DB (project `axbsghyqhhdaiylcksbv`) has 6 published seed products that must survive: migration is data-preserving, `IF NOT EXISTS`/`DO $$`-guarded, and safe to re-run.
-- Spec: `docs/superpowers/specs/2026-07-04-products-experience-design.md` (rev 3) — §4 is the contract for this PR.
-- Definition of green: `npm run typecheck` && `npm run lint` && `npm test` && `npm run build` all exit 0.
+% ---------- header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\lhead{\small\color{slate}NurvexThink}
+\rhead{\small\color{slate}Products Schema Plan}
+\cfoot{\small\color{slate}\thepage}
 
-## File Structure
+% ---------- code listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{silver},
+  breaklines=true, columns=fullflexible,
+  xleftmargin=0.5em, framexleftmargin=0.5em,
+  showstringspaces=false,
+  literate=
+    {—}{{-{}-}}1
+    {–}{{-}}1
+    {→}{{$\rightarrow$}}2
+    {↔}{{$\leftrightarrow$}}2
+    {…}{{\ldots}}1
+    {§}{{\S}}1
+    {·}{{$\cdot$}}1
+    {🤖}{{[bot]}}1
+}
 
-- `supabase/migrations/0003_products_experience.sql` — **create**: the whole schema transform (§4 of spec).
-- `src/lib/supabase/types.ts` — **modify**: `ProductStatusRow` → `ProductRow` (new columns), add `ProductCategoryRow`, `ProductFeatureRow`, `ProductBlogLinkRow`; extend `Database`.
-- `src/lib/queries.ts` — **modify**: `toProduct` maps `lifecycle`→`status`, `tech`→`tags`; filters/order use `status`/`sort_order`. Export `toProduct` for tests.
-- `src/lib/queries.test.ts` — **create**: unit tests for the mapping.
-- `src/lib/admin-queries.ts` — **modify**: type-name update only.
-- `src/app/admin/(panel)/products/actions.ts` — **modify**: form parsing writes `lifecycle`/`tech`/`status`(+`published_at`).
-- `src/components/admin/product-form.tsx` — **modify**: Status select → Lifecycle select; Published checkbox drives `status`.
-- `src/app/admin/(panel)/products/page.tsx` — **modify**: table reads `lifecycle` + `status`.
-- `CLAUDE.md` — **modify**: data-model line mentions the three new tables.
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
----
+\setlist{itemsep=2pt, topsep=3pt}
 
-### Task 1: Migration 0003
+% ---------- title page ----------
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+\colorbox{ink}{%
+  \begin{minipage}[c][6cm][c]{0.92\textwidth}
+    \centering
+    \includegraphics[width=4cm]{NurvexThink_logo.jpeg}\\[0.6cm]
+    {\Huge\bfseries\color{white} NurvexThink}\\[0.2cm]
+    {\large\color{silver} Software, built and published.}
+  \end{minipage}%
+}
 
-**Files:**
-- Create: `supabase/migrations/0003_products_experience.sql`
+\vspace{1.6cm}
+{\Large\bfseries\color{navy} Products Schema (PR 1 of 3) --- Implementation Plan}\\[0.4cm]
+{\large\color{slate} Migration 0003: categories, lifecycle/status split, tech rename, feature/junction tables, security fixes}
 
-**Interfaces:**
-- Consumes: live schema from `0001_initial_schema.sql` + `0002_content_columns_and_seed.sql` (products: `published bool`, `status text 'Live'`, `category text`, `tags text[]`, `year text`; helper `private.is_admin()`; trigger fn `public.set_updated_at()`).
-- Produces: final `products` shape per spec §4; tables `product_categories`, `product_features`, `product_blog_links`; `private.is_owner()`; role-protection trigger. Later tasks' row types must match these columns exactly.
+\vfill
+\begin{tabular}{rl}
+\textbf{Date:} & 2026-07-04\\
+\textbf{Status:} & Implementation plan (PR 1 of 3)\\
+\textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
+\textbf{Branch:} & \texttt{feat/products}\\
+\end{tabular}
+\vspace{1.5cm}
+\end{titlepage}
 
-- [ ] **Step 1: Write the migration file** — exact content:
+\tableofcontents
+\newpage
 
-```sql
+% ===================================================================
+\section{Overview}
+
+\textit{For agentic workers: REQUIRED SUB-SKILL --- use \texttt{superpowers:subagent-driven-development}
+(recommended) or \texttt{superpowers:executing-plans} to implement this plan task-by-task.}
+
+\textbf{Goal:} Migration 0003 transforms the live products schema (categories table,
+lifecycle/status split, tech rename, feature/junction tables, security fixes) while every
+existing page --- public grid, detail, and the basic admin CRUD --- keeps working unchanged.
+
+\textbf{Architecture:} One idempotent SQL migration (matching the 0001/0002 style:
+\texttt{IF NOT EXISTS} + \texttt{DO \$\$} guards for renames) plus a single TypeScript
+compile-unit update: row types $\rightarrow$ public queries $\rightarrow$ admin surfaces. The
+UI view-model \texttt{Product} keeps its exact shape (\texttt{status: "Live"|"Beta"|"Soon"},
+\texttt{tags}) so \textbf{no public component changes}; only the mapping layer changes
+underneath.
+
+\textbf{Tech Stack:} Postgres (Supabase), TypeScript, Next.js 16 Server Actions, Vitest.
+
+\subsection*{Global Constraints}
+\begin{itemize}
+  \item Brand spelling: \textbf{NurvexThink} / \texttt{nurvexthink} (never other spellings).
+  \item RLS default-deny on every table; index every column an RLS policy references (CLAUDE.md).
+  \item \texttt{service\_role} key server-side only; never in client code or the repo.
+  \item Conventional Commits; branch \texttt{feat/products} (already checked out; spec commits
+        live on it).
+  \item \textbf{No new npm dependencies in this PR.}
+  \item The live DB (project \texttt{axbsghyqhhdaiylcksbv}) has 6 published seed products that
+        must survive: migration is data-preserving, \texttt{IF NOT EXISTS}/\texttt{DO \$\$}-guarded,
+        and safe to re-run.
+  \item Spec: \texttt{docs/superpowers/specs/2026-07-04-products-experience-design.md} (rev 3)
+        --- \S4 is the contract for this PR.
+  \item Definition of green: \texttt{npm run typecheck} \&\& \texttt{npm run lint} \&\&
+        \texttt{npm test} \&\& \texttt{npm run build} all exit 0.
+\end{itemize}
+
+\subsection*{File Structure}
+\begin{itemize}
+  \item \texttt{supabase/migrations/0003\_products\_experience.sql} --- \textbf{create}: the
+        whole schema transform (\S4 of spec).
+  \item \texttt{src/lib/supabase/types.ts} --- \textbf{modify}: \texttt{ProductStatusRow}
+        $\rightarrow$ \texttt{ProductRow} (new columns), add \texttt{ProductCategoryRow},
+        \texttt{ProductFeatureRow}, \texttt{ProductBlogLinkRow}; extend \texttt{Database}.
+  \item \texttt{src/lib/queries.ts} --- \textbf{modify}: \texttt{toProduct} maps
+        \texttt{lifecycle}$\rightarrow$\texttt{status}, \texttt{tech}$\rightarrow$\texttt{tags};
+        filters/order use \texttt{status}/\texttt{sort\_order}. Export \texttt{toProduct} for
+        tests.
+  \item \texttt{src/lib/queries.test.ts} --- \textbf{create}: unit tests for the mapping.
+  \item \texttt{src/lib/admin-queries.ts} --- \textbf{modify}: type-name update only.
+  \item \texttt{src/app/admin/(panel)/products/actions.ts} --- \textbf{modify}: form parsing
+        writes \texttt{lifecycle}/\texttt{tech}/\texttt{status}(+\texttt{published\_at}).
+  \item \texttt{src/components/admin/product-form.tsx} --- \textbf{modify}: Status select
+        $\rightarrow$ Lifecycle select; Published checkbox drives \texttt{status}.
+  \item \texttt{src/app/admin/(panel)/products/page.tsx} --- \textbf{modify}: table reads
+        \texttt{lifecycle} + \texttt{status}.
+  \item \texttt{CLAUDE.md} --- \textbf{modify}: data-model line mentions the three new tables.
+\end{itemize}
+
+% ===================================================================
+\section{Task 1: Migration 0003}
+
+\subsection*{Files}
+\begin{itemize}
+  \item Create: \texttt{supabase/migrations/0003\_products\_experience.sql}
+\end{itemize}
+
+\subsection*{Interfaces}
+\begin{itemize}
+  \item Consumes: live schema from \texttt{0001\_initial\_schema.sql} +
+        \texttt{0002\_content\_columns\_and\_seed.sql} (products: \texttt{published bool},
+        \texttt{status text 'Live'}, \texttt{category text}, \texttt{tags text[]},
+        \texttt{year text}; helper \texttt{private.is\_admin()}; trigger fn
+        \texttt{public.set\_updated\_at()}).
+  \item Produces: final \texttt{products} shape per spec \S4; tables
+        \texttt{product\_categories}, \texttt{product\_features}, \texttt{product\_blog\_links};
+        \texttt{private.is\_owner()}; role-protection trigger. Later tasks' row types must
+        match these columns exactly.
+\end{itemize}
+
+\subsection*{Step 1: Write the migration file --- exact content}
+
+\begin{lstlisting}
 -- NurvexThink — 0003: products experience (spec 2026-07-04 rev 3).
 -- Transforms the LIVE schema data-preservingly. Apply in Supabase → SQL Editor
 -- after 0001 + 0002. Idempotent: IF NOT EXISTS + DO $$ guards; safe to re-run.
@@ -332,42 +472,55 @@ drop trigger if exists protect_profile_role on public.profiles;
 create trigger protect_profile_role
   before update on public.profiles
   for each row execute function public.protect_profile_role();
-```
+\end{lstlisting}
 
-- [ ] **Step 2: Sanity-check the SQL statically**
+\subsection*{Step 2: Sanity-check the SQL statically}
 
-Run: `node -e "const s=require('fs').readFileSync('supabase/migrations/0003_products_experience.sql','utf8'); const b=(s.match(/do \\$\\$/g)||[]).length, e=(s.match(/end \\$\\$;/g)||[]).length; console.log('DO blocks', b, '== END blocks', e, b===e ? 'OK' : 'MISMATCH');"`
-Expected: `DO blocks 5 == END blocks 5 OK`
+Run:
+\begin{lstlisting}
+node -e "const s=require('fs').readFileSync('supabase/migrations/0003_products_experience.sql','utf8'); const b=(s.match(/do \$\$/g)||[]).length, e=(s.match(/end \$\$;/g)||[]).length; console.log('DO blocks', b, '== END blocks', e, b===e ? 'OK' : 'MISMATCH');"
+\end{lstlisting}
+Expected: \texttt{DO blocks 5 == END blocks 5 OK}
 
-- [ ] **Step 3: Commit**
+\subsection*{Step 3: Commit}
 
-```bash
+\begin{lstlisting}
 git add supabase/migrations/0003_products_experience.sql
 git commit -m "feat: migration 0003 — categories, lifecycle/status split, features, blog links, role guard"
-```
+\end{lstlisting}
 
----
+% ===================================================================
+\section{Task 2: TypeScript Layer --- Row Types, Public Queries (TDD), Admin Surfaces}
 
-### Task 2: TypeScript layer — row types, public queries (TDD), admin surfaces
+\emph{One compile unit: the row-type rename breaks every consumer, so all files land in this
+task; the gate at the end is the full green bar.}
 
-*(One compile unit: the row-type rename breaks every consumer, so all files land in this task; the gate at the end is the full green bar.)*
+\subsection*{Files}
+\begin{itemize}
+  \item Modify: \texttt{src/lib/supabase/types.ts} (whole file replace)
+  \item Modify: \texttt{src/lib/queries.ts:1-65}
+  \item Create: \texttt{src/lib/queries.test.ts}
+  \item Modify: \texttt{src/lib/admin-queries.ts:2,7,16}
+  \item Modify: \texttt{src/app/admin/(panel)/products/actions.ts:9-31,74-80}
+  \item Modify: \texttt{src/components/admin/product-form.tsx:6,29,60-77,94-108,110-129}
+  \item Modify: \texttt{src/app/admin/(panel)/products/page.tsx:52-68}
+\end{itemize}
 
-**Files:**
-- Modify: `src/lib/supabase/types.ts` (whole file replace)
-- Modify: `src/lib/queries.ts:1-65`
-- Create: `src/lib/queries.test.ts`
-- Modify: `src/lib/admin-queries.ts:2,7,16`
-- Modify: `src/app/admin/(panel)/products/actions.ts:9-31,74-80`
-- Modify: `src/components/admin/product-form.tsx:6,29,60-77,94-108,110-129`
-- Modify: `src/app/admin/(panel)/products/page.tsx:52-68`
+\subsection*{Interfaces}
+\begin{itemize}
+  \item Consumes: column names produced by Task 1's migration (exact: \texttt{lifecycle},
+        \texttt{status}, \texttt{tech}, \texttt{tagline}, \texttt{highlights},
+        \texttt{technical\_details}, \texttt{gallery}, \texttt{sort\_order},
+        \texttt{seo\_description}, \texttt{og\_image}, \texttt{published\_at},
+        \texttt{category\_id}).
+  \item Produces: \texttt{ProductRow}, \texttt{ProductCategoryRow}, \texttt{ProductFeatureRow},
+        \texttt{ProductBlogLinkRow} types; exported \texttt{toProduct(row: ProductRow): Product}.
+        PR 2/3 build on these names.
+\end{itemize}
 
-**Interfaces:**
-- Consumes: column names produced by Task 1's migration (exact: `lifecycle`, `status`, `tech`, `tagline`, `highlights`, `technical_details`, `gallery`, `sort_order`, `seo_description`, `og_image`, `published_at`, `category_id`).
-- Produces: `ProductRow`, `ProductCategoryRow`, `ProductFeatureRow`, `ProductBlogLinkRow` types; exported `toProduct(row: ProductRow): Product`. PR 2/3 build on these names.
+\subsection*{Step 1: Write the failing test --- create \texttt{src/lib/queries.test.ts}}
 
-- [ ] **Step 1: Write the failing test** — create `src/lib/queries.test.ts`:
-
-```typescript
+\begin{lstlisting}
 import { describe, it, expect } from "vitest";
 import { toProduct } from "@/lib/queries";
 import type { ProductRow } from "@/lib/supabase/types";
@@ -421,16 +574,16 @@ describe("toProduct", () => {
     expect(p.category).toBe("Software");
   });
 });
-```
+\end{lstlisting}
 
-- [ ] **Step 2: Run test to verify it fails**
+\subsection*{Step 2: Run test to verify it fails}
 
-Run: `npx vitest run src/lib/queries.test.ts`
-Expected: FAIL — `toProduct` is not exported / `ProductRow` does not exist.
+Run: \texttt{npx vitest run src/lib/queries.test.ts}\\
+Expected: FAIL --- \texttt{toProduct} is not exported / \texttt{ProductRow} does not exist.
 
-- [ ] **Step 3: Replace `src/lib/supabase/types.ts` entirely with:**
+\subsection*{Step 3: Replace \texttt{src/lib/supabase/types.ts} entirely with}
 
-```typescript
+\begin{lstlisting}
 /**
  * Database types for the NurvexThink Supabase schema.
  * Mirrors supabase/migrations/0001–0003. If you change the schema,
@@ -591,11 +744,14 @@ export type Database = {
     Enums: Record<string, never>;
   };
 };
-```
+\end{lstlisting}
 
-- [ ] **Step 4: Update `src/lib/queries.ts`** — replace lines 1–65 (imports, `toProduct`, `getProducts`, `getProductBySlug`); `toPost`/`getPosts`/`getPostBySlug` stay as they are:
+\subsection*{Step 4: Update \texttt{src/lib/queries.ts}}
 
-```typescript
+Replace lines 1--65 (imports, \texttt{toProduct}, \texttt{getProducts}, \texttt{getProductBySlug});
+\texttt{toPost}/\texttt{getPosts}/\texttt{getPostBySlug} stay as they are:
+
+\begin{lstlisting}
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Product, BlogPost } from "@/lib/content";
 import type { ProductRow, BlogPostRow } from "@/lib/supabase/types";
@@ -655,22 +811,26 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     return null;
   }
 }
-```
+\end{lstlisting}
 
-- [ ] **Step 5: Run the mapping test — verify it passes**
+\subsection*{Step 5: Run the mapping test --- verify it passes}
 
-Run: `npx vitest run src/lib/queries.test.ts`
+Run: \texttt{npx vitest run src/lib/queries.test.ts}\\
 Expected: PASS (3 tests)
 
-- [ ] **Step 6: Update `src/lib/admin-queries.ts`** — only the type name changes (3 spots):
+\subsection*{Step 6: Update \texttt{src/lib/admin-queries.ts} --- only the type name changes (3 spots)}
 
-Line 2: `import type { ProductRow, BlogPostRow, OrderRow } from "@/lib/supabase/types";`
-Line 7: `export async function listProductsAdmin(): Promise<ProductRow[]> {`
-Line 16: `export async function getProductAdmin(id: string): Promise<ProductRow | null> {`
+\begin{lstlisting}
+Line 2:  import type { ProductRow, BlogPostRow, OrderRow } from "@/lib/supabase/types";
+Line 7:  export async function listProductsAdmin(): Promise<ProductRow[]> {
+Line 16: export async function getProductAdmin(id: string): Promise<ProductRow | null> {
+\end{lstlisting}
 
-- [ ] **Step 7: Update `src/app/admin/(panel)/products/actions.ts`** — replace `parseForm` (lines 9–31) and `toggleProductPublished` (lines 74–80):
+\subsection*{Step 7: Update \texttt{src/app/admin/(panel)/products/actions.ts}}
 
-```typescript
+Replace \texttt{parseForm} (lines 9--31) and \texttt{toggleProductPublished} (lines 74--80):
+
+\begin{lstlisting}
 function parseForm(formData: FormData) {
   const tech = String(formData.get("tech") ?? "")
     .split(",")
@@ -697,9 +857,9 @@ function parseForm(formData: FormData) {
     published_at: published ? (existingPublishedAt ?? new Date().toISOString()) : existingPublishedAt,
   };
 }
-```
+\end{lstlisting}
 
-```typescript
+\begin{lstlisting}
 export async function toggleProductPublished(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const next = formData.get("current") !== "true";
@@ -718,20 +878,23 @@ export async function toggleProductPublished(formData: FormData) {
     .eq("id", id);
   revalidateAll();
 }
-```
+\end{lstlisting}
 
-*(Note: the free-text `category` field is dropped from the form in this PR — the category
-becomes a managed table; the full category picker arrives with the tiered editor in PR 3.
-`createProduct`/`updateProduct` bodies are unchanged — `parseForm`'s return feeds them.)*
+\emph{Note: the free-text \texttt{category} field is dropped from the form in this PR --- the
+category becomes a managed table; the full category picker arrives with the tiered editor in
+PR 3. \texttt{createProduct}/\texttt{updateProduct} bodies are unchanged --- \texttt{parseForm}'s
+return feeds them.}
 
-- [ ] **Step 8: Update `src/components/admin/product-form.tsx`:**
+\subsection*{Step 8: Update \texttt{src/components/admin/product-form.tsx}}
 
-Line 6: `import type { ProductRow } from "@/lib/supabase/types";`
-Line 29: `product?: ProductRow;`
+\begin{lstlisting}
+Line 6:  import type { ProductRow } from "@/lib/supabase/types";
+Line 29: product?: ProductRow;
+\end{lstlisting}
 
-Replace the Category/Status/Year grid (lines 60–77) with (category input removed):
+Replace the Category/Status/Year grid (lines 60--77) with (category input removed):
 
-```tsx
+\begin{lstlisting}
       <div className="grid gap-5 sm:grid-cols-2">
         <label className={labelClass}>
           Lifecycle
@@ -750,11 +913,11 @@ Replace the Category/Status/Year grid (lines 60–77) with (category input remov
           <input name="year" defaultValue={product?.year ?? ""} className={fieldClass} />
         </label>
       </div>
-```
+\end{lstlisting}
 
-In the Tags/Live URL grid (lines 94–108), rename the field to `tech`:
+In the Tags/Live URL grid (lines 94--108), rename the field to \texttt{tech}:
 
-```tsx
+\begin{lstlisting}
         <label className={labelClass}>
           Tech <span className="text-muted-foreground font-normal">(comma separated)</span>
           <input
@@ -764,12 +927,12 @@ In the Tags/Live URL grid (lines 94–108), rename the field to `tech`:
             className={fieldClass}
           />
         </label>
-```
+\end{lstlisting}
 
-Replace the Published checkbox (lines 120–128) and add the hidden `existing_published_at`
-just before it:
+Replace the Published checkbox (lines 120--128) and add the hidden
+\texttt{existing\_published\_at} just before it:
 
-```tsx
+\begin{lstlisting}
         <input
           type="hidden"
           name="existing_published_at"
@@ -784,95 +947,113 @@ just before it:
           />
           Published (visible on the site)
         </label>
-```
+\end{lstlisting}
 
-- [ ] **Step 9: Update `src/app/admin/(panel)/products/page.tsx`** (lines 52–68):
+\subsection*{Step 9: Update \texttt{src/app/admin/(panel)/products/page.tsx} (lines 52--68)}
 
-Line 52 (lifecycle cell): `<td className="text-muted-foreground px-4 py-3 capitalize">{p.lifecycle}</td>`
-Line 56 (hidden current): `<input type="hidden" name="current" value={String(p.status === "published")} />`
-Lines 61 & 66 (badge): replace `p.published` with `p.status === "published"` in both the
-`cn(...)` condition and the label (`{p.status === "published" ? "Published" : "Hidden"}`).
-Also line 49 shows `p.category` — the column is gone; replace that fragment with nothing:
-`/{p.slug}` only (delete `{p.category ? \` · ${p.category}\` : ""}`).
+\begin{lstlisting}
+Line 52 (lifecycle cell): <td className="text-muted-foreground px-4 py-3 capitalize">{p.lifecycle}</td>
+Line 56 (hidden current):  <input type="hidden" name="current" value={String(p.status === "published")} />
+\end{lstlisting}
 
-- [ ] **Step 10: Full green bar**
+Lines 61 \& 66 (badge): replace \lstinline|p.published| with \lstinline|p.status === "published"|
+in both the \lstinline|cn(...)| condition and the label
+(\lstinline|{p.status === "published" ? "Published" : "Hidden"}|). Also line 49 shows
+\lstinline|p.category| --- the column is gone; replace that fragment with nothing:
+\lstinline|/{p.slug}| only (delete \lstinline|{p.category ? \` · ${p.category}\` : ""}|).
 
-Run: `npm run typecheck && npm run lint && npm test && npm run build`
-Expected: all exit 0; test count grows by 3 (the new `queries.test.ts`).
+\subsection*{Step 10: Full green bar}
 
-- [ ] **Step 11: Commit**
+Run: \texttt{npm run typecheck \&\& npm run lint \&\& npm test \&\& npm run build}\\
+Expected: all exit 0; test count grows by 3 (the new \texttt{queries.test.ts}).
 
-```bash
+\subsection*{Step 11: Commit}
+
+\begin{lstlisting}
 git add src/lib/supabase/types.ts src/lib/queries.ts src/lib/queries.test.ts src/lib/admin-queries.ts "src/app/admin/(panel)/products/actions.ts" src/components/admin/product-form.tsx "src/app/admin/(panel)/products/page.tsx"
 git commit -m "feat: point queries and admin CRUD at the 0003 schema (lifecycle/status/tech)"
-```
+\end{lstlisting}
 
----
+% ===================================================================
+\section{Task 3: Apply Migration, Verify Live, Document, PR}
 
-### Task 3: Apply migration, verify live, document, PR
+\subsection*{Files}
+\begin{itemize}
+  \item Modify: \texttt{CLAUDE.md} (Data model line)
+\end{itemize}
 
-**Files:**
-- Modify: `CLAUDE.md` (Data model line)
+\subsection*{Interfaces}
+\begin{itemize}
+  \item Consumes: Task 1's SQL file; Task 2's green build.
+  \item Produces: live DB on the new schema; open PR for \texttt{feat/products}.
+\end{itemize}
 
-**Interfaces:**
-- Consumes: Task 1's SQL file; Task 2's green build.
-- Produces: live DB on the new schema; open PR for `feat/products`.
+\subsection*{Step 1: Update CLAUDE.md data model line}
 
-- [ ] **Step 1: Update CLAUDE.md data model line** — replace:
+Replace:
 
-`Tables: \`profiles\`, \`products\`, \`blog_posts\`, \`orders\`. Storage: \`product-images\`,`
+\begin{lstlisting}
+Tables: `profiles`, `products`, `blog_posts`, `orders`. Storage: `product-images`,
+\end{lstlisting}
 
 with:
 
-`Tables: \`profiles\`, \`products\`, \`product_categories\`, \`product_features\`,
-\`product_blog_links\`, \`blog_posts\`, \`orders\`. Storage: \`product-images\`,`
+\begin{lstlisting}
+Tables: `profiles`, `products`, `product_categories`, `product_features`,
+`product_blog_links`, `blog_posts`, `orders`. Storage: `product-images`,
+\end{lstlisting}
 
-- [ ] **Step 2: HUMAN GATE — apply 0003 to the live DB**
+\subsection*{Step 2: HUMAN GATE --- apply 0003 to the live DB}
 
-Paste `supabase/migrations/0003_products_experience.sql` into
-https://supabase.com/dashboard/project/axbsghyqhhdaiylcksbv → SQL Editor → Run.
-(Or hand it to Claude once the Supabase MCP server is authenticated.)
+Paste \texttt{supabase/migrations/0003\_products\_experience.sql} into
+\url{https://supabase.com/dashboard/project/axbsghyqhhdaiylcksbv} $\rightarrow$ SQL Editor
+$\rightarrow$ Run. (Or hand it to Claude once the Supabase MCP server is authenticated.)
 
-**Timing note:** production still runs the old code until this PR deploys; between
-applying 0003 and the deploy finishing, the live `/products` grid renders its
-fail-soft empty state (queries catch and return `[]`). Pre-launch this is acceptable —
-apply the migration, then merge immediately.
+\textbf{Timing note:} production still runs the old code until this PR deploys; between
+applying 0003 and the deploy finishing, the live \texttt{/products} grid renders its fail-soft
+empty state (queries catch and return \texttt{[]}). Pre-launch this is acceptable --- apply the
+migration, then merge immediately.
 
-- [ ] **Step 3: Verify the migration** — run in the SQL editor:
+\subsection*{Step 3: Verify the migration}
 
-```sql
+Run in the SQL editor:
+
+\begin{lstlisting}
 select
   (select count(*) from public.products)                                   as products,
   (select count(*) from public.products where status = 'published')        as published,
   (select count(*) from public.product_categories)                         as categories,
   (select count(*) from public.products where category_id is null)         as uncategorized,
   (select count(*) from public.products where sort_order = 0)              as unsorted;
-```
+\end{lstlisting}
 
-Expected: `products = 6`, `published = 6`, `categories = 6` (Productivity, Analytics,
-Finance, AI, Developer tools, Security), `uncategorized = 0`, `unsorted = 0`.
+Expected: \texttt{products = 6}, \texttt{published = 6}, \texttt{categories = 6} (Productivity,
+Analytics, Finance, AI, Developer tools, Security), \texttt{uncategorized = 0},
+\texttt{unsorted = 0}.
 
 Also confirm the columns:
 
-```sql
+\begin{lstlisting}
 select column_name from information_schema.columns
 where table_schema = 'public' and table_name = 'products' order by column_name;
-```
+\end{lstlisting}
 
-Expected to include `lifecycle`, `status`, `tech`, `tagline`, `highlights`,
-`technical_details`, `gallery`, `sort_order`, `seo_description`, `og_image`,
-`published_at` — and NOT `published`, `tags`, `category`.
+Expected to include \texttt{lifecycle}, \texttt{status}, \texttt{tech}, \texttt{tagline},
+\texttt{highlights}, \texttt{technical\_details}, \texttt{gallery}, \texttt{sort\_order},
+\texttt{seo\_description}, \texttt{og\_image}, \texttt{published\_at} --- and NOT
+\texttt{published}, \texttt{tags}, \texttt{category}.
 
-The live DB has no `owner` yet (0001 defaults every profile to `admin`) — promote the CEO while in the SQL editor:
+The live DB has no \texttt{owner} yet (0001 defaults every profile to \texttt{admin}) ---
+promote the CEO while in the SQL editor:
 
-```sql
+\begin{lstlisting}
 update public.profiles set role = 'owner' where email = 'fatima.abdulraheemdev.17@gmail.com';
 select email, role from public.profiles;
-```
+\end{lstlisting}
 
-- [ ] **Step 4: Push branch + open PR**
+\subsection*{Step 4: Push branch + open PR}
 
-```bash
+\begin{lstlisting}
 git push -u origin feat/products
 gh pr create --title "feat: products schema — categories, lifecycle/status, features, blog links" --body "PR 1 of 3 from docs/superpowers/specs/2026-07-04-products-experience-design.md (§4, §8.1).
 
@@ -882,17 +1063,30 @@ gh pr create --title "feat: products schema — categories, lifecycle/status, fe
 - TS layer repointed (lifecycle/status/tech); public UI renders identically; basic admin CRUD keeps working
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)"
-```
+\end{lstlisting}
 
-- [ ] **Step 5: Post-merge smoke check** — after merge + deploy, `/products` on production
-shows the same six cards as before (order may differ only if `featured`/`created_at` ties
-resolved differently — it should not), and `/admin/products` still lists, edits, and
-toggles visibility.
+\subsection*{Step 5: Post-merge smoke check}
 
----
+After merge + deploy, \texttt{/products} on production shows the same six cards as before
+(order may differ only if \texttt{featured}/\texttt{created\_at} ties resolved differently ---
+it should not), and \texttt{/admin/products} still lists, edits, and toggles visibility.
 
-## Self-Review (done)
+% ===================================================================
+\section{Self-Review (done)}
+\begin{itemize}
+  \item \textbf{Spec coverage (PR 1 scope):} \S4 migration path steps 1--7 $\rightarrow$ Task 1
+        sections 1--8; \S5 trigger fix $\rightarrow$ Task 1 \S8; ``queries/view-models keep
+        rendering unchanged'' $\rightarrow$ Task 2 (UI \texttt{Product} shape untouched, verified
+        by unchanged public components + green bar); indexes $\rightarrow$ Task 1 (all listed).
+        Quick View/features UI, sitemap, tiered editor = PR 2/3 (own plans).
+  \item \textbf{Placeholder scan:} none --- every step carries full code/commands.
+  \item \textbf{Type consistency:} \texttt{ProductRow.lifecycle: "live"|"beta"|"soon"}
+        $\leftrightarrow$ migration CHECK $\leftrightarrow$ \texttt{LIFECYCLE\_LABEL} keys
+        $\leftrightarrow$ form option values; \texttt{status: "draft"|"published"}
+        $\leftrightarrow$ CHECK $\leftrightarrow$ actions/page comparisons; \texttt{tech}
+        $\leftrightarrow$ form field \texttt{name="tech"} $\leftrightarrow$ \texttt{parseForm}
+        reads \texttt{tech}. \texttt{category\_name} is optional on \texttt{ProductRow} (join
+        alias), excluded from Insert/Update.
+\end{itemize}
 
-- **Spec coverage (PR 1 scope):** §4 migration path steps 1–7 → Task 1 sections 1–8; §5 trigger fix → Task 1 §8; "queries/view-models keep rendering unchanged" → Task 2 (UI `Product` shape untouched, verified by unchanged public components + green bar); indexes → Task 1 (all listed). Quick View/features UI, sitemap, tiered editor = PR 2/3 (own plans).
-- **Placeholder scan:** none — every step carries full code/commands.
-- **Type consistency:** `ProductRow.lifecycle: "live"|"beta"|"soon"` ↔ migration CHECK ↔ `LIFECYCLE_LABEL` keys ↔ form option values; `status: "draft"|"published"` ↔ CHECK ↔ actions/page comparisons; `tech` ↔ form field `name="tech"` ↔ `parseForm` reads `tech`. `category_name` is optional on `ProductRow` (join alias), excluded from Insert/Update.
+\end{document}

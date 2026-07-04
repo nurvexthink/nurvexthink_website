@@ -1,6 +1,8 @@
 -- NurvexThink — 0003: products experience (spec 2026-07-04 rev 3).
 -- Transforms the LIVE schema data-preservingly. Apply in Supabase → SQL Editor
 -- after 0001 + 0002. Idempotent: IF NOT EXISTS + DO $$ guards; safe to re-run.
+-- NOTE: after 0003, re-running 0002's seed would fail (it references dropped tags/category/published) — 0002 is superseded, do not re-run it.
+-- NOTE: the category backfill assumes distinct category names slugify distinctly (true for the live data); arbitrary data could collide on the slug unique constraint.
 
 -- ============================================================
 -- 1) product_categories (admin-managed; replaces products.category text)
