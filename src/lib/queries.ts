@@ -15,7 +15,7 @@ export function toProduct(row: ProductRowJoined): Product {
   return {
     slug: row.slug,
     name: row.name,
-    category: row.product_categories?.name ?? row.category_name ?? "Software",
+    category: row.product_categories?.name ?? "Software",
     summary: row.summary ?? "",
     description: row.description ?? "",
     status: LIFECYCLE_LABEL[row.lifecycle] ?? "Live",

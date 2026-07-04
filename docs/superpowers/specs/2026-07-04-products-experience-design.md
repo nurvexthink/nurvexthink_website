@@ -262,8 +262,9 @@ Migrations are SQL files committed under `supabase/migrations/` and applied to p
 - **Privilege-escalation fix (0003):** the 0001 `"profiles: self can update"` policy lets
   any signed-in user set their own `role`. 0003 adds a `BEFORE UPDATE` trigger on
   `profiles` that rejects any change to `role` unless the caller's own profile role is
-  `'owner'`, and re-scopes the self-update policy. (A trigger, not RLS, because RLS is
-  row-granular and cannot see which column changed.)
+  `'owner'`. (0001's self-update policy itself is unchanged — the trigger alone closes
+  the hole. A trigger, not RLS, because RLS is row-granular and cannot see which column
+  changed.)
 - `service_role` key never leaves the server; mutations run through Server Actions that
   re-verify the admin session.
 

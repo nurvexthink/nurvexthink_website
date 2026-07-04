@@ -344,8 +344,9 @@ Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_or
   \item \textbf{Privilege-escalation fix (0003):} the 0001 self-update policy lets any
         signed-in user set their own \texttt{role}. 0003 adds a \texttt{BEFORE UPDATE}
         trigger on \texttt{profiles} rejecting \texttt{role} changes unless the caller is an
-        \texttt{owner} (a trigger, not RLS, because RLS is row-granular and cannot see which
-        column changed).
+        \texttt{owner}. 0001's self-update policy itself is unchanged --- the trigger alone
+        closes the hole (a trigger, not RLS, because RLS is row-granular and cannot see
+        which column changed).
   \item \texttt{service\_role} never leaves the server; Server Actions re-verify the session.
 \end{itemize}
 

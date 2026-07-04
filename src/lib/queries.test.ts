@@ -14,7 +14,6 @@ const row: ProductRow = {
   cover_image: null,
   gallery: [],
   category_id: null,
-  category_name: "Productivity",
   tech: ["Next.js", "Realtime"],
   lifecycle: "beta",
   year: "2026",
@@ -41,13 +40,19 @@ describe("toProduct", () => {
     expect(toProduct(row).tags).toEqual(["Next.js", "Realtime"]);
   });
 
+  it("maps the joined category name to the UI category", () => {
+    expect(toProduct({ ...row, product_categories: { name: "Productivity" } }).category).toBe(
+      "Productivity",
+    );
+  });
+
   it("keeps the existing null-safety defaults", () => {
-    const bare = { ...row, summary: null, description: null, year: null, live_url: null, category_name: null };
+    const bare = { ...row, summary: null, description: null, year: null, live_url: null };
     const p = toProduct(bare);
     expect(p.summary).toBe("");
     expect(p.description).toBe("");
     expect(p.year).toBe("");
     expect(p.liveUrl).toBe("#");
-    expect(p.category).toBe("Software");
+    expect(toProduct({ ...row, product_categories: null }).category).toBe("Software");
   });
 });
