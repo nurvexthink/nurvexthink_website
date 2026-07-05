@@ -66,6 +66,8 @@ export const services: Service[] = [
 ];
 
 // Products live in the `products` table; fetched via getProducts/getProductDetailBySlug.
+export type RelatedChip = { slug: string; title: string };
+
 export type Product = {
   slug: string;
   name: string;
@@ -81,6 +83,7 @@ export type Product = {
   coverImage: string | null;
   highlights: string[];
   featured: boolean;
+  related: RelatedChip[];
 };
 
 export type ProductFeature = { title: string; description: string; image: string | null };

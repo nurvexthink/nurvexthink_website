@@ -24,6 +24,7 @@ function makeProduct(over: Partial<Product>): Product {
     coverImage: null,
     highlights: ["One", "Two", "Three"],
     featured: true,
+    related: [],
     ...over,
   };
 }

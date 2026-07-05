@@ -208,6 +208,11 @@ h4 {
   color: transparent;
 }
 
+/* Lock page scroll while the quick-view dialog is open. */
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
 /* ---- Ambient logo background ------------------------------------------ */
 
 /* Full-page fixed layer behind all content. Sits at -z-10 so it paints above

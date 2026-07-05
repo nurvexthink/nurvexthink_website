@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { ProductDetailView } from "@/components/product-detail-view";
 import { getProductDetailBySlug } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
+
+// Shared across generateMetadata + the page so both read one query per request.
+const getDetail = cache(getProductDetailBySlug);
 
 export async function generateMetadata({
   params,
@@ -11,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const detail = await getProductDetailBySlug(slug);
+  const detail = await getDetail(slug);
   if (!detail) return { title: "Product not found" };
   return {
     title: detail.name,
@@ -31,7 +35,7 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const detail = await getProductDetailBySlug(slug);
+  const detail = await getDetail(slug);
   if (!detail) notFound();
   return <ProductDetailView detail={detail} />;
 }

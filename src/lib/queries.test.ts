@@ -10,7 +10,7 @@ const row: ProductRow & {
   }[];
   product_blog_links?: {
     sort_order: number;
-    blog_posts: { slug: string; title: string; excerpt: string | null; cover_image: string | null } | null;
+    blog_posts: { slug: string; title: string; excerpt?: string | null; cover_image?: string | null } | null;
   }[];
 } = {
   id: "00000000-0000-0000-0000-000000000001",
@@ -56,6 +56,21 @@ describe("toProduct", () => {
     const p = toProduct({ ...row, tagline: null, product_categories: null });
     expect(p.tagline).toBe("A keyboard-first project board.");
     expect(p.category).toBe("Software");
+  });
+
+  it("orders related chips by sort_order, drops null links, and caps at two", () => {
+    const p = toProduct({
+      ...row,
+      product_blog_links: [
+        { sort_order: 20, blog_posts: { slug: "two", title: "Two" } },
+        { sort_order: 10, blog_posts: { slug: "one", title: "One" } },
+        { sort_order: 5, blog_posts: null },
+      ],
+    });
+    expect(p.related).toEqual([
+      { slug: "one", title: "One" },
+      { slug: "two", title: "Two" },
+    ]);
   });
 });
 
