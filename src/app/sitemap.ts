@@ -1,7 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getProducts, getPosts } from "@/lib/queries";
+import { SITE_URL } from "@/lib/site-url";
 
-const BASE = "https://nurvexthink-website.vercel.app";
+// Regenerate hourly so admin-published products reach the sitemap between deploys.
+export const revalidate = 3600;
+
+const BASE = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, posts] = await Promise.all([getProducts(), getPosts()]);
