@@ -65,17 +65,36 @@ export const services: Service[] = [
   },
 ];
 
-// Products live in the `products` table; fetched via getProducts/getProductBySlug.
+// Products live in the `products` table; fetched via getProducts/getProductDetailBySlug.
 export type Product = {
   slug: string;
   name: string;
   category: string;
+  tagline: string;
   summary: string;
   description: string;
   status: "Live" | "Beta" | "Soon";
   tags: string[];
   year: string;
   liveUrl: string;
+  repoUrl: string | null;
+  coverImage: string | null;
+  highlights: string[];
+  featured: boolean;
+};
+
+export type ProductFeature = { title: string; description: string; image: string | null };
+
+export type RelatedPost = { slug: string; title: string; excerpt: string; coverImage: string | null };
+
+export type ProductDetail = Product & {
+  descriptionParagraphs: string[];
+  technicalParagraphs: string[];
+  gallery: string[];
+  features: ProductFeature[];
+  relatedPosts: RelatedPost[];
+  seoDescription: string;
+  ogImage: string | null;
 };
 
 export type ProcessStep = { step: string; title: string; description: string };
