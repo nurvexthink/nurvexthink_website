@@ -5,7 +5,7 @@ import type { ProductRow, BlogPostRow } from "@/lib/supabase/types";
 const LIFECYCLE_LABEL = { live: "Live", beta: "Beta", soon: "Soon" } as const;
 
 /** Grid/detail selects. Nested selects are RLS-filtered per table for anon. */
-const PRODUCT_SELECT = "*, product_categories(name)";
+const PRODUCT_SELECT = "*, product_categories(name), product_blog_links(sort_order, blog_posts(slug,title))";
 const PRODUCT_DETAIL_SELECT =
   "*, product_categories(name), product_features(id,title,description,image,sort_order), product_blog_links(sort_order, blog_posts(slug,title,excerpt,cover_image))";
 
@@ -17,13 +17,18 @@ type FeatureJoin = {
   sort_order: number;
 };
 
+/**
+ * One shape covers both selects: the grid select only fetches slug/title,
+ * the detail select also fetches excerpt/cover_image — so those two are
+ * optional here and defaulted at the mapping site.
+ */
 type LinkJoin = {
   sort_order: number;
   blog_posts: {
     slug: string;
     title: string;
-    excerpt: string | null;
-    cover_image: string | null;
+    excerpt?: string | null;
+    cover_image?: string | null;
   } | null;
 };
 
@@ -41,6 +46,10 @@ function paragraphs(text: string | null): string[] {
 }
 
 export function toProduct(row: ProductRowJoined): Product {
+  const related = [...(row.product_blog_links ?? [])]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .flatMap((l) => (l.blog_posts ? [{ slug: l.blog_posts.slug, title: l.blog_posts.title }] : []))
+    .slice(0, 2);
   return {
     slug: row.slug,
     name: row.name,
@@ -56,6 +65,7 @@ export function toProduct(row: ProductRowJoined): Product {
     coverImage: row.cover_image,
     highlights: row.highlights ?? [],
     featured: row.featured,
+    related,
   };
 }
 
@@ -72,7 +82,7 @@ export function toProductDetail(row: ProductRowJoined): ProductDetail {
             slug: l.blog_posts.slug,
             title: l.blog_posts.title,
             excerpt: l.blog_posts.excerpt ?? "",
-            coverImage: l.blog_posts.cover_image,
+            coverImage: l.blog_posts.cover_image ?? null,
           }]
         : [],
     );

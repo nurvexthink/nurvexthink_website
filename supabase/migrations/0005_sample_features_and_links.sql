@@ -1,6 +1,7 @@
 -- NurvexThink — 0005: quick-view content (taglines + highlights), sample
 -- features, and product↔blog links so the new public sections are visible
 -- with real content. Idempotent.
+-- NOTE: re-running overwrites any later edits to tagline/highlights on these six products.
 
 -- Quick-view tier: a short tagline + plain-language highlights per product.
 update public.products p

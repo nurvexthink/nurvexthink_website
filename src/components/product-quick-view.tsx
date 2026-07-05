@@ -83,6 +83,20 @@ export function ProductQuickView({
             <p className="text-muted-foreground text-sm">{product.summary}</p>
           ) : null}
 
+          {product.related.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {product.related.map((post) => (
+                <Link
+                  key={post.slug}
+                  href={`/blog/${post.slug}`}
+                  className="border-border text-muted-foreground hover:text-foreground hover:border-primary/40 rounded-full border px-3 py-1 text-xs transition-colors"
+                >
+                  ✎ {post.title}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
             {cta.kind === "live" ? (
               <a
