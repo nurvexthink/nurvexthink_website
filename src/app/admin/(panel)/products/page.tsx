@@ -7,8 +7,16 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminProductsPage() {
-  const [products, categories] = await Promise.all([listProductsAdmin(), listCategoriesAdmin()]);
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const [{ error }, products, categories] = await Promise.all([
+    searchParams,
+    listProductsAdmin(),
+    listCategoriesAdmin(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,6 +41,14 @@ export default async function AdminProductsPage() {
           </Link>
         </div>
       </div>
+
+      {/* deleteProduct is a plain form action with no consumed return value —
+          it redirects here with ?error= on failure (expired session, RLS). */}
+      {error ? (
+        <p className="border-destructive/30 bg-destructive/10 text-destructive rounded-lg border px-3.5 py-2.5 text-sm">
+          {error}
+        </p>
+      ) : null}
 
       {products.length === 0 ? (
         <p className="border-border bg-card text-muted-foreground rounded-2xl border p-8 text-sm">

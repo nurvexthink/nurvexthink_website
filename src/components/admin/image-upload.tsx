@@ -5,20 +5,31 @@ import Image from "next/image";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { uploadProductImage } from "@/app/admin/(panel)/products/actions";
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
 /** Shared pick-file → server-action-upload flow. */
 function useUpload(onDone: (url: string) => void) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File) {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError("Image is too large — max 5MB.");
+      return;
+    }
     setBusy(true);
     setError(null);
-    const formData = new FormData();
-    formData.set("file", file);
-    const result = await uploadProductImage(formData);
-    if (result.ok) onDone(result.url);
-    else setError(result.error);
-    setBusy(false);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const result = await uploadProductImage(formData);
+      if (result.ok) onDone(result.url);
+      else setError(result.error);
+    } catch {
+      setError("Upload failed — check your connection and session, then try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return { busy, error, upload };
