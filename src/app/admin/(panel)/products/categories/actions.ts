@@ -6,6 +6,16 @@ import { slugify, nextSortOrder, sortOrderSequence } from "@/lib/product-admin";
 
 export type CategoryActionResult = { ok: boolean; error: string | null };
 
+const SESSION_EXPIRED_ERROR = "Your session has expired — sign in again.";
+
+/** Guards every mutating action against an expired/missing session. */
+async function requireUser(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
 function revalidateCategoryPaths() {
   revalidatePath("/");
   revalidatePath("/products"); // filter pills come from this table
@@ -17,6 +27,8 @@ export async function createCategory(name: string): Promise<CategoryActionResult
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, error: "Category name is required." };
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
   const { data: rows } = await supabase.from("product_categories").select("sort_order");
   const sort_order = nextSortOrder((rows ?? []).map((r) => r.sort_order));
   const { error } = await supabase
@@ -37,15 +49,24 @@ export async function renameCategory(id: string, name: string): Promise<Category
   const trimmed = name.trim();
   if (!trimmed) return { ok: false, error: "Category name is required." };
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
+  const { error, data } = await supabase
     .from("product_categories")
     .update({ name: trimmed, slug: slugify(trimmed) })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id");
   if (error) {
     return {
       ok: false,
       error:
         error.code === "23505" ? "A category with that name already exists." : error.message,
+    };
+  }
+  if (!data?.length) {
+    return {
+      ok: false,
+      error: "Nothing was saved — your session may have expired. Sign in again.",
     };
   }
   revalidateCategoryPaths();
@@ -59,6 +80,8 @@ export async function renameCategory(id: string, name: string): Promise<Category
  */
 export async function deleteCategory(id: string): Promise<CategoryActionResult> {
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
   const { count } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
@@ -78,13 +101,22 @@ export async function deleteCategory(id: string): Promise<CategoryActionResult> 
 // Assumes orderedIds is the complete id set (the drag list is never filtered).
 export async function reorderCategories(orderedIds: string[]): Promise<CategoryActionResult> {
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
   const orders = sortOrderSequence(orderedIds.length);
   for (let i = 0; i < orderedIds.length; i++) {
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from("product_categories")
       .update({ sort_order: orders[i] })
-      .eq("id", orderedIds[i]);
+      .eq("id", orderedIds[i])
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data?.length) {
+      return {
+        ok: false,
+        error: "Nothing was saved — your session may have expired. Sign in again.",
+      };
+    }
   }
   revalidateCategoryPaths();
   return { ok: true, error: null };

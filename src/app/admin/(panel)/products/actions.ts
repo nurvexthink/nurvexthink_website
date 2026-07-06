@@ -1,13 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   validatePublishTier,
+  slugify,
   copySlug,
   nextSortOrder,
   sortOrderSequence,
 } from "@/lib/product-admin";
+
+const SESSION_EXPIRED_ERROR = "Your session has expired — sign in again.";
+
+/** Guards every mutating action against an expired/missing session. */
+async function requireUser(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Payload types — the tiered editor submits ONE JSON object (nested lists
@@ -59,13 +71,14 @@ function revalidateProductPaths(slugs: (string | null | undefined)[] = []) {
   revalidatePath("/products");
   for (const slug of slugs) if (slug) revalidatePath(`/products/${slug}`);
   revalidatePath("/admin/products");
+  revalidatePath("/sitemap.xml");
 }
 
 const LIFECYCLES = ["live", "beta", "soon"] as const;
 
 function sanitize(payload: ProductPayload) {
   return {
-    slug: payload.slug.trim().toLowerCase(),
+    slug: slugify(payload.slug.trim()),
     name: payload.name.trim(),
     tagline: payload.tagline.trim() || null,
     summary: payload.summary.trim() || null,
@@ -95,12 +108,14 @@ export async function saveProductFull(
   intent: SaveIntent,
   payload: ProductPayload,
 ): Promise<SaveProductResult> {
+  const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, missing: [], error: SESSION_EXPIRED_ERROR };
+
   const fields = sanitize(payload);
   if (!fields.name || !fields.slug) {
     return { ok: false, missing: [], error: "Name and slug are required." };
   }
-
-  const supabase = await createServerSupabaseClient();
 
   let current: { status: "draft" | "published"; slug: string; published_at: string | null } | null =
     null;
@@ -143,8 +158,26 @@ export async function saveProductFull(
 
   let productId: string;
   if (id) {
-    const { error } = await supabase.from("products").update(record).eq("id", id);
-    if (error) return { ok: false, missing: [], error: error.message };
+    const { error, data } = await supabase
+      .from("products")
+      .update(record)
+      .eq("id", id)
+      .select("id");
+    if (error) {
+      return {
+        ok: false,
+        missing: [],
+        error:
+          error.code === "23505" ? "That slug is already in use — pick another." : error.message,
+      };
+    }
+    if (!data?.length) {
+      return {
+        ok: false,
+        missing: [],
+        error: "Nothing was saved — your session may have expired. Sign in again.",
+      };
+    }
     productId = id;
   } else {
     // New products go to the end of the (unfeatured) list — same end-of-list
@@ -162,7 +195,14 @@ export async function saveProductFull(
       .select("id")
       .single();
     if (error || !data) {
-      return { ok: false, missing: [], error: error?.message ?? "Insert failed." };
+      return {
+        ok: false,
+        missing: [],
+        error:
+          error?.code === "23505"
+            ? "That slug is already in use — pick another."
+            : (error?.message ?? "Insert failed."),
+      };
     }
     productId = data.id;
   }
@@ -258,6 +298,8 @@ export async function saveProductFull(
 // Assumes orderedIds is the complete id set (the drag list is never filtered).
 export async function reorderProducts(orderedIds: string[]): Promise<MutationResult> {
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
   const orders = sortOrderSequence(orderedIds.length);
   for (let i = 0; i < orderedIds.length; i++) {
     const { error } = await supabase
@@ -277,6 +319,8 @@ export async function reorderProducts(orderedIds: string[]): Promise<MutationRes
 
 export async function duplicateProduct(id: string): Promise<MutationResult> {
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
 
   const { data: source } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
   if (!source) return { ok: false, error: "Product not found." };
@@ -359,6 +403,10 @@ export async function duplicateProduct(id: string): Promise<MutationResult> {
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 export async function uploadProductImage(formData: FormData): Promise<UploadResult> {
+  const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, error: SESSION_EXPIRED_ERROR };
+
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "Choose a file first." };
@@ -374,7 +422,6 @@ export async function uploadProductImage(formData: FormData): Promise<UploadResu
     (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
   const path = `products/${crypto.randomUUID()}.${ext}`;
 
-  const supabase = await createServerSupabaseClient();
   const { error } = await supabase.storage
     .from("product-images")
     .upload(path, file, { contentType: file.type, cacheControl: "31536000" });
@@ -385,13 +432,26 @@ export async function uploadProductImage(formData: FormData): Promise<UploadResu
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// deleteProduct — unchanged behavior, now also revalidates the detail path.
+// deleteProduct — plain form action (no consumed return value), so failures
+// (expired session, RLS-blocked delete) redirect back with an error message
+// instead of failing silently.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function deleteProduct(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const supabase = await createServerSupabaseClient();
+  const user = await requireUser(supabase);
+  if (!user) {
+    redirect(`/admin/products?error=${encodeURIComponent(SESSION_EXPIRED_ERROR)}`);
+  }
   const { data: row } = await supabase.from("products").select("slug").eq("id", id).maybeSingle();
-  await supabase.from("products").delete().eq("id", id);
+  const { error, data } = await supabase.from("products").delete().eq("id", id).select("id");
+  if (error || !data?.length) {
+    redirect(
+      `/admin/products?error=${encodeURIComponent(
+        "The product could not be deleted — your session may have expired. Sign in again.",
+      )}`,
+    );
+  }
   revalidateProductPaths([row?.slug]);
 }

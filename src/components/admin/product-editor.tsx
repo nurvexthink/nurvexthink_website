@@ -145,21 +145,26 @@ export function ProductEditor({
     setMissing([]);
     setServerError(null);
     setOfferUnpublish(false);
-    const result = await saveProductFull(product?.id ?? null, intent, buildPayload());
-    if (!result.ok) {
-      setMissing(result.missing);
-      setServerError(result.error);
-      if (result.missing.length > 0 && isPublished && intent === "save") setOfferUnpublish(true);
+    try {
+      const result = await saveProductFull(product?.id ?? null, intent, buildPayload());
+      if (!result.ok) {
+        setMissing(result.missing);
+        setServerError(result.error);
+        if (result.missing.length > 0 && isPublished && intent === "save") setOfferUnpublish(true);
+        return;
+      }
+      if (product) {
+        router.push("/admin/products");
+      } else {
+        // New product: land in its editor so Preview / Publish are one click away.
+        router.push(`/admin/products/${result.id}`);
+      }
+      router.refresh();
+    } catch {
+      setServerError("Save failed — check your connection and session, then try again.");
+    } finally {
       setBusy(null);
-      return;
     }
-    if (product) {
-      router.push("/admin/products");
-    } else {
-      // New product: land in its editor so Preview / Publish are one click away.
-      router.push(`/admin/products/${result.id}`);
-    }
-    router.refresh();
   }
 
   return (
